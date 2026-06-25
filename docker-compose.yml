@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+  bot:
+    build: .
+    container_name: proxyneko_bot
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - TZ=UTC
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - proxyneko_net
+
+  redis:
+    image: redis:7-alpine
+    container_name: proxyneko_redis
+    restart: unless-stopped
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - proxyneko_net
+
+volumes:
+  redis_data:
+
+networks:
+  proxyneko_net:
+    driver: bridge
